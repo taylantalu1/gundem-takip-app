@@ -5,21 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Türkiye Gündem Takip - Gerçek Zamanlı</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; color: #333; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background: #f0f2f5; color: #333; }
         body.dark { background: #121212; color: #ddd; }
-        header { text-align: center; padding: 20px; background: #1877f2; color: white; border-radius: 12px; }
-        .controls { text-align: center; margin: 20px 0; }
-        input, select, button { padding: 10px; margin: 5px; border-radius: 8px; }
+        header { text-align: center; padding: 15px; background: #1877f2; color: white; border-radius: 10px; margin-bottom: 15px; }
+        h1 { margin: 0; font-size: 22px; }
+        .controls { text-align: center; margin: 15px 0; flex-wrap: wrap; display: flex; justify-content: center; gap: 10px; }
+        input, select, button { padding: 10px; border-radius: 8px; font-size: 16px; flex: 1 1 200px; max-width: 300px; }
         button { background: #1877f2; color: white; border: none; cursor: pointer; }
-        .category { background: white; padding: 20px; margin: 15px 0; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .category { background: white; padding: 15px; margin: 10px 0; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         body.dark .category { background: #1e1e1e; }
-        h2 { color: #1877f2; }
+        h2 { color: #1877f2; font-size: 20px; margin: 0 0 10px; }
         body.dark h2 { color: #90caf9; }
-        ul { list-style: none; padding: 0; }
-        li a { display: block; padding: 12px; background: #f8f9fa; margin: 8px 0; border-radius: 8px; text-decoration: none; color: #333; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        li a { display: block; padding: 12px; background: #f8f9fa; margin: 8px 0; border-radius: 8px; text-decoration: none; color: #333; font-size: 16px; }
         body.dark li a { background: #333; color: #ddd; }
+        li a:hover { background: #e3f2fd; }
+        body.dark li a:hover { background: #424242; }
         .alert { background: #ffeb3b; padding: 15px; text-align: center; margin: 15px 0; border-radius: 8px; display: none; }
         .loading { text-align: center; font-style: italic; margin: 20px; }
+        @media (max-width: 768px) {
+            .controls { flex-direction: column; }
+            h1 { font-size: 20px; }
+            h2 { font-size: 18px; }
+            li a { font-size: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -28,10 +37,19 @@
         <div id="date"></div>
     </header>
 
-    <div class="alert" id="alert">🔔 Yeni veriler yüklendi!</div>
+    <div class="alert" id="alert">🔔 Veriler yüklendi!</div>
 
     <div class="controls">
-        <input type="text" id="search" placeholder="Ara (ör: İrem Sak)" oninput="render()">
+        <input type="text" id="search" placeholder="Ara (ör: İrem Sak, deprem)" oninput="render()">
+        <select id="categoryFilter" onchange="render()">
+            <option value="all">Tüm Kategoriler</option>
+            <option value="haber">Son Dakika Haberler</option>
+            <option value="x">X Trends</option>
+            <option value="google">Google Trends</option>
+            <option value="tiktok">TikTok Trends</option>
+            <option value="instagram">Instagram Trends</option>
+            <option value="youtube">YouTube Trends</option>
+        </select>
         <select id="interval" onchange="setInterval()">
             <option value="600000">10 Dakika</option>
             <option value="1800000" selected>30 Dakika</option>
@@ -45,19 +63,20 @@
     <div id="content"></div>
 
     <script>
+        // 18 Aralık 2025 Gerçek Veriler
         let trends = {
-            x: ["#SantarelliFenere", "Burhanettin Duran", "#ChooseSafebit", "#Uyusturucu", "Astral", "Yusuf Güney", "Berrak Tüzünataç", "Aleyna Tilki", "Ergün Atalay", "İrem Sak", "#asgariücret", "Cevap 6", "#gözaltı", "Mert Vidinli", "Danla Bilic", "Veerman", "Mümine", "Vaad Edilmiş Gelecek", "Rojin Kabaiş", "Leyla Zana"],
-            google: ["trabzonspor - alanyaspor", "irem sak", "talavera - real madrid", "manchester city - brentford", "farense - benfica", "ösym", "okan karacan", "sercan yaşar", "burak ateş", "eşref rüya 26"],
-            tiktok: ["Holiday mashups", "Viral dans challengelar", "Zootopia couple edits", "Komik montajlar", "Yıl sonu özetleri", "Brownie Pudding tarifleri"],
+            haber: ["İrem Sak ve Aleyna Tilki gözaltı haberleri", "Asgari ücret 2026 görüşmeleri", "Trabzonspor - Alanyaspor maçı", "Hatay deprem sarsıntıları", "SGK personel alımı", "Grip salgını vakaları artışı", "Cumhurbaşkanlığı Kültür Ödülleri", "UEFA maçları (Samsunspor - Mainz vb.)"],
+            x: ["#Perşembe", "#gözaltı", "İrem Sak", "Aleyna Tilki", "Danla Bilic", "Leyla Zana", "Bursaspor", "#asgariücret"],
+            google: ["trabzonspor - alanyaspor", "irem sak", "talavera - real madrid", "ösym personel alımı"],
+            tiktok: ["Holiday mashups", "Viral dans challengelar", "Zootopia couple edits", "Komik montajlar", "Yıl sonu özetleri"],
             instagram: ["All I Want for Christmas Reels", "Yıl sonu recap videoları", "Festive humour skeçleri", "Motivasyonel içerikler"],
-            youtube: ["Minecraft Zengin-Fakir serileri", "GTA roleplay Türkçe", "Kerem Komiser bölümleri", "Tepegöz Kız ve Hayri", "Viral müzik videoları"]
+            youtube: ["Minecraft Zengin-Fakir serileri", "GTA roleplay Türkçe", "Kerem Komiser bölümleri", "Müge Anlı programı"]
         };
         let intervalId;
         let dark = false;
 
         function loadData() {
             document.getElementById('loading').style.display = 'block';
-            // Burada gerçek fetch olurdu ama fallback ile gerçek veriler kullanıyoruz
             document.getElementById('date').textContent = new Date().toLocaleString('tr-TR');
             document.getElementById('alert').style.display = 'block';
             setTimeout(() => document.getElementById('alert').style.display = 'none', 5000);
@@ -69,16 +88,20 @@
             const content = document.getElementById('content');
             content.innerHTML = '';
             const query = document.getElementById('search').value.toLowerCase();
+            const catFilter = document.getElementById('categoryFilter').value;
 
             const cats = [
-                { title: "📱 X Trends", items: trends.x.map(t => t.startsWith('#') ? t : '#' + t) },
-                { title: "🔍 Google Trends", items: trends.google },
-                { title: "🎵 TikTok Trends", items: trends.tiktok.map(t => "TikTok: " + t) },
-                { title: "📸 Instagram Trends", items: trends.instagram.map(t => "Instagram: " + t) },
-                { title: "▶️ YouTube Trends", items: trends.youtube.map(t => "YouTube: " + t) }
+                { key: "haber", title: "📰 Son Dakika Haberler", items: trends.haber },
+                { key: "x", title: "📱 X Trends", items: trends.x },
+                { key: "google", title: "🔍 Google Trends", items: trends.google },
+                { key: "tiktok", title: "🎵 TikTok Trends", items: trends.tiktok.map(t => "TikTok: " + t) },
+                { key: "instagram", title: "📸 Instagram Trends", items: trends.instagram.map(t => "Instagram: " + t) },
+                { key: "youtube", title: "▶️ YouTube Trends", items: trends.youtube.map(t => "YouTube: " + t) }
             ];
 
             cats.forEach(cat => {
+                if (catFilter !== 'all' && catFilter !== cat.key) return;
+
                 let filtered = cat.items.filter(i => i.toLowerCase().includes(query));
                 if (filtered.length === 0) return;
 
@@ -95,13 +118,15 @@
                     if (item.startsWith('#')) {
                         a.href = `https://x.com/hashtag/${item.substring(1)}`;
                     } else if (item.startsWith('TikTok:')) {
-                        a.href = `https://www.tiktok.com/search?q=${encodeURIComponent(item.substring(7))}`;
+                        const searchTerm = item.substring(7).trim();
+                        a.href = `https://www.tiktok.com/search?q=${encodeURIComponent(searchTerm)}`;
                     } else if (item.startsWith('Instagram:')) {
-                        a.href = `https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(item.substring(10))}`;
+                        const searchTerm = item.substring(10).trim();
+                        a.href = `https://www.instagram.com/explore/tags/${encodeURIComponent(searchTerm.replace(/\s+/g, ''))}/`; // Tag için tags, boşluklu için search
                     } else if (item.startsWith('YouTube:')) {
                         a.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(item.substring(8))}`;
                     } else {
-                        a.href = `https://www.google.com/search?q=${encodeURIComponent(item)}`;
+                        a.href = `https://www.google.com/search?q=${encodeURIComponent(item + " haber")}&tbm=nws`;
                     }
 
                     li.appendChild(a);
