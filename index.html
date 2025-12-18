@@ -9,7 +9,7 @@
         body.dark { background: #121212; color: #ddd; }
         header { text-align: center; padding: 15px; background: #1877f2; color: white; border-radius: 10px; margin-bottom: 15px; }
         h1 { margin: 0; font-size: 22px; }
-        .controls { text-align: center; margin: 15px 0; flex-wrap: wrap; display: flex; justify-content: center; gap: 10px; }
+        .controls { text-align: center; margin: 15px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
         input, select, button { padding: 10px; border-radius: 8px; font-size: 16px; flex: 1 1 200px; max-width: 300px; }
         button { background: #1877f2; color: white; border: none; cursor: pointer; }
         .category { background: white; padding: 15px; margin: 10px 0; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -40,7 +40,7 @@
     <div class="alert" id="alert">🔔 Veriler yüklendi!</div>
 
     <div class="controls">
-        <input type="text" id="search" placeholder="Ara (ör: İrem Sak, deprem)" oninput="render()">
+        <input type="text" id="search" placeholder="Ara (ör: İrem Sak, christmas)" oninput="render()">
         <select id="categoryFilter" onchange="render()">
             <option value="all">Tüm Kategoriler</option>
             <option value="haber">Son Dakika Haberler</option>
@@ -65,12 +65,12 @@
     <script>
         // 18 Aralık 2025 Gerçek Veriler
         let trends = {
-            haber: ["İrem Sak ve Aleyna Tilki gözaltı haberleri", "Asgari ücret 2026 görüşmeleri", "Trabzonspor - Alanyaspor maçı", "Hatay deprem sarsıntıları", "SGK personel alımı", "Grip salgını vakaları artışı", "Cumhurbaşkanlığı Kültür Ödülleri", "UEFA maçları (Samsunspor - Mainz vb.)"],
-            x: ["#Perşembe", "#gözaltı", "İrem Sak", "Aleyna Tilki", "Danla Bilic", "Leyla Zana", "Bursaspor", "#asgariücret"],
-            google: ["trabzonspor - alanyaspor", "irem sak", "talavera - real madrid", "ösym personel alımı"],
-            tiktok: ["Holiday mashups", "Viral dans challengelar", "Zootopia couple edits", "Komik montajlar", "Yıl sonu özetleri"],
-            instagram: ["All I Want for Christmas Reels", "Yıl sonu recap videoları", "Festive humour skeçleri", "Motivasyonel içerikler"],
-            youtube: ["Minecraft Zengin-Fakir serileri", "GTA roleplay Türkçe", "Kerem Komiser bölümleri", "Müge Anlı programı"]
+            haber: ["İrem Sak ve arkadaşları gözaltı", "Asgari ücret komisyon toplantısı", "Trabzonspor - Alanyaspor maçı", "Hatay deprem uyarıları", "SGK personel alımı ilanı", "Grip vakaları artışı", "UEFA Avrupa Ligi maçları"],
+            x: ["#SantarelliFenere", "Burhanettin Duran", "Yusuf Güney", "Aleyna Tilki", "İrem Sak", "#gözaltı", "Danla Bilic", "Mert Vidinli"],
+            google: ["trabzonspor - alanyaspor", "irem sak", "talavera - real madrid", "ösym", "asgari ücret"],
+            tiktok: ["Holiday mashups", "Viral dans challengelar", "Zootopia edits", "Komik montajlar", "Yıl sonu özetleri"],
+            instagram: ["christmas", "yılsonu", "festive", "motivasyon", "reelsviral"],
+            youtube: ["Minecraft", "GTA roleplay", "Kerem Komiser", "Müge Anlı"]
         };
         let intervalId;
         let dark = false;
@@ -118,11 +118,15 @@
                     if (item.startsWith('#')) {
                         a.href = `https://x.com/hashtag/${item.substring(1)}`;
                     } else if (item.startsWith('TikTok:')) {
-                        const searchTerm = item.substring(7).trim();
-                        a.href = `https://www.tiktok.com/search?q=${encodeURIComponent(searchTerm)}`;
+                        const term = item.substring(7).trim();
+                        a.href = `https://www.tiktok.com/search?q=${encodeURIComponent(term)}`;
                     } else if (item.startsWith('Instagram:')) {
-                        const searchTerm = item.substring(10).trim();
-                        a.href = `https://www.instagram.com/explore/tags/${encodeURIComponent(searchTerm.replace(/\s+/g, ''))}/`; // Tag için tags, boşluklu için search
+                        const term = item.substring(10).trim().toLowerCase().replace(/\s+/g, '');
+                        if (term.length > 0) {
+                            a.href = `https://www.instagram.com/explore/tags/${term}/`;
+                        } else {
+                            a.href = 'https://www.instagram.com/explore/';
+                        }
                     } else if (item.startsWith('YouTube:')) {
                         a.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(item.substring(8))}`;
                     } else {
