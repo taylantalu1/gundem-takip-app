@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Türkiye Gündem Takip - Gerçek Zamanlı</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; color: #333; }
+        body.dark { background: #121212; color: #ddd; }
+        header { text-align: center; padding: 15px; background: #1e88e5; color: white; border-radius: 8px; }
+        .controls { text-align: center; margin: 15px 0; }
+        select, input { padding: 8px; margin: 5px; border-radius: 4px; }
+        button { padding: 8px 16px; background: #1e88e5; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .category { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        body.dark .category { background: #1e1e1e; }
+        h2 { color: #1e88e5; border-bottom: 2px solid #1e88e5; padding-bottom: 5px; }
+        ul { list-style: none; padding: 0; }
+        li a { display: block; padding: 8px; margin: 5px 0; background: #f9f9f9; border-radius: 4px; text-decoration: none; color: #333; }
+        body.dark li a { background: #333; color: #ddd; }
+        .alert { background: #fff176; padding: 10px; text-align: center; margin: 10px 0; border-radius: 4px; display: none; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🇹🇷 Türkiye Gündem Takip (Gerçek Zamanlı)</h1>
+        <div id="date"></div>
+    </header>
+
+    <div class="controls">
+        <input type="text" id="search" placeholder="Ara..." oninput="render()">
+        <select id="sort" onchange="render()">
+            <option value="default">Varsayılan</option>
+            <option value="alpha">Alfabetik</option>
+        </select>
+        <select id="interval" onchange="setInterval()">
+            <option value="1800000">30 dk</option>
+            <option value="600000">10 dk</option>
+        </select>
+        <button onclick="fetchData()">Yenile</button>
+        <button onclick="toggleDark()">Karanlık Mod</button>
+    </div>
+    <div id="alert" class="alert">Yeni veriler yüklendi!</div>
+    <div id="content"></div>
+
+    <script>
+        let data = {};
+        let intervalId;
+        let darkMode = false;
+
+        async function fetchData() {
+            try {
+                // Gerçek API çekme (ücretsiz proxy ile X Trends)
+                const proxy = 'https://api.allorigins.win/raw?url=';
+                const xTrends = await fetch(proxy + 'https://getdaytrends.com/api/trends?location=Turkey').then(res => res.json());
+                const googleTrends = await fetch(proxy + 'https://trends.google.com/trends/api/dailytrends?geo=TR&hl=tr').then(res => res.json());
+
+                // Verileri kategorilere ayır
+                data = {
+                    sosyal: { title: "📱 Sosyal Medya", items: xTrends.trends.map(t => '#' + t.name) },
+                    arama: { title: "🔍 Arama Trendleri", items: googleTrends.default.trendingSearchesDays[0].trendingSearches.map(t => t.title.query) }
+                };
+
+                document.getElementById('date').textContent = new Date().toLocaleString('tr-TR');
+                document.getElementById('alert').style.display = 'block';
+                setTimeout(() => document.getElementById('alert').style.display = 'none', 5000);
+                render();
+            } catch (e) {
+                console.error('API hatası:', e);
+            }
+        }
+
+        function render() {
+            const content = document.getElementById('content');
+            content.innerHTML = "";
+            const query = document.getElementById('search').value.toLowerCase();
+            const sort = document.getElementById('sort').value;
+
+            Object.keys(data).forEach(key => {
+                let cat = data[key];
+                let items = cat.items.filter(i => i.toLowerCase().includes(query));
+                if (items.length === 0) return;
+
+                if (sort === 'alpha') items.sort();
+
+                const div = document.createElement('div');
+                div.className = 'category';
+                div.innerHTML = `<h2>${cat.title}</h2><ul></ul>`;
+                const ul = div.querySelector('ul');
+                items.forEach(item => {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.target = '_blank';
+                    a.textContent = item;
+                    if (item.startsWith('#')) a.href = `https://x.com/hashtag/${item.substring(1)}`;
+                    else a.href = `https://www.google.com/search?q=${encodeURIComponent(item)}`;
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                });
+                content.appendChild(div);
+            });
+        }
+
+        function setInterval() {
+            clearInterval(intervalId);
+            const val = parseInt(document.getElementById('interval').value);
+            if (val > 0) intervalId = setInterval(fetchData, val);
+        }
+
+        function toggleDark() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark', darkMode);
+        }
+
+        fetchData(); // İlk yükleme
+        setInterval(); // Periyot başlat
+    </script>
+</body>
+</html>
